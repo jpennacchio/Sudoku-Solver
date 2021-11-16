@@ -1,0 +1,414 @@
+
+#include <iostream>
+#include <tuple>
+#include "puzzle.hpp"
+#include <cstdint>
+using int64=std::uint64_t;
+using SetPos=std::vector<std::vector<int64>>;
+
+//void pause(){
+//	string bla;
+//	std::cout << "pausing for you to put arbitrary input" << endl;
+//	getline(cin,bla);
+//}
+//
+//void print(set< int > S)
+//{
+//	for (set<int>::iterator iter = S.begin(); iter!=S.end(); iter++){
+//		std::cout << *iter << " ";
+//	}
+//}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+bool Puzzle::solve () {
+	//all empty squares in inputed matrix should be filled with zeroes;
+	if (is_consistent()==false)
+		return false;
+	if(num_emptysquares()>0) {
+	  SetPos possibilities = softcode_empty_squares(); // construct initial possibilities
+		weedout(possibilities); //eliminate impossibilities
+	  if (find_empty_possibilities_and_empty_squares(possibilities)==false)
+			return false;
+		int num_hardcoded = hardcode(possibilities);
+		///////////////////
+		for (unsigned int a=0; a<playfield.num_rows(); a++) {
+		  for (unsigned int b=0; b<playfield.num_columns(); b++) {
+//				print(possibilities[a][b]);
+				//pause();
+//				std::cout<<endl;
+			}
+		}
+		// std::cout<<"Loop completed"<<endl;
+//		pause ();
+
+
+		/////////////////////
+//		cout<<num_hardcoded;
+		if (num_hardcoded>0) {
+			return solve();
+
+	      //loop back to see num_empty squares is still greater than zero
+		}
+		else {
+			//			std::cout << *this << endl;
+		  //This split between smaller and larger puzzles left runtime virtually unchanged
+		  if (playfield.num_rows()>9) {	
+		    //return venture_guess (possibilities);
+		    //Took 24.82 seconds using that function. 
+		    return venture_guess(possibilities);
+		  }
+		  else {
+		    //using the simpler venture guess on the smaller puzzles
+		    return venture_guess_9(possibilities);
+		  }
+	   //hypothetically guess, enter a number, hardcode it, see if it works
+		}
+	}
+
+	else {
+		//this function should check if the puzzle is correctly solved
+		if (is_solved ()) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		//return a true/false value, and "this" object is the solution
+
+	} // re: else
+} // re: solve
+/////////////////////////////////////////////////////////////////////////////////////////
+bool Puzzle:: is_square() const {
+  if(playfield.num_rows()==playfield.num_columns()) {
+    return true;
+  }
+  else {
+    return false;  
+}
+}//end function
+bool Puzzle::is_perfect_square() const {
+  double z=sqrt(playfield.num_rows());
+  int w=sqrt(playfield.num_rows());
+  double y=z-w;
+  if(abs(y)<0.001) {
+    return true;
+  }
+  return false;
+}//end function
+
+bool Puzzle:: is_consistent() const {
+  int z= sqrt(playfield.num_rows());
+  for (unsigned int i=0; i<playfield.num_rows(); i++) {
+		if (check_row_consistency(i)== true) {
+			return false;
+		}
+	}
+  for (unsigned int j=0; j<playfield.num_rows(); j++) {
+		if (check_column_consistency(j)== true) {
+					return false;
+				}
+	}
+  for (unsigned int m=0; m<z; m++) {
+    for (unsigned int n=0; n<z; n++) {
+			if (check_box_consistency(m,n)== true) {
+						return false;
+					}
+		}
+	}
+	return true;
+}
+bool Puzzle:: check_row_consistency (unsigned int a) const {
+  //int64 S;
+ int64 S= EmptySet ();
+  for (unsigned int j=0; j<playfield.num_rows(); j++) {
+		if (playfield.entry (a,j) !=0 ) {
+		  //was S.find(playfield.entry(a,j) != S.end()
+		  if (find (S, playfield.entry (a,j))) {
+				return true;
+				//inconsistent
+			}
+			else {
+			  insert (S,playfield.entry (a,j));
+			}
+		}
+	}
+	return false;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+bool Puzzle:: check_column_consistency (unsigned int b) const {
+  //modified to initialize as an empty set  
+int64 S= EmptySet();
+  for (unsigned int k=0; k<playfield.num_rows(); k++) {
+		if (playfield.entry (k,b) !=0 ) {
+		  if (find (S, playfield.entry (k,b))) {
+				return true;
+			}
+			else {
+			  insert (S,playfield.entry (k,b));
+			}
+		}
+	}
+	return false;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+bool Puzzle:: check_box_consistency (unsigned int m, unsigned int n) const {
+  int64 S= EmptySet();
+  int z=sqrt(playfield.num_rows());
+  for (unsigned int p=0; p<z; p++) {
+    for (unsigned int q=0; q<z; q++) {
+			unsigned int a, b;
+			a=z*m+p;
+			b=z*n+q;
+			//looping through the different squares in each box.
+			if (playfield.entry (a,b) !=0 ) {
+			  if (find (S, playfield.entry (a,b))) {
+					return true;
+				}
+				else {
+				  insert (S, playfield.entry (a,b));
+				}
+			}
+		}
+	}
+	return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+bool Puzzle:: find_empty_possibilities_and_empty_squares(SetPos const & possibilities) const {
+  for (unsigned int i=0; i<playfield.num_rows(); i++) {
+    for (unsigned int j=0; j<playfield.num_rows(); j++) {
+      if ( (playfield.entry (i,j)==0)&& (num_ones(possibilities[i][j]) ==0) ) {
+	       return false;
+       		//there is a empty square with empty possibilities
+			}
+		}
+	}
+	return true;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+SetPos Puzzle::softcode_empty_squares() const {
+  SetPos possibilities;
+  possibilities.resize (playfield.num_rows());
+  int64 one_through_nine= EmptySet();
+	for (unsigned int b=0;b<playfield.num_rows();b++){
+	  insert (one_through_nine, b+1);
+	}
+	for (unsigned int a=0; a<playfield.num_rows(); a++) {
+	  possibilities [a].resize (playfield.num_rows());
+	  for (unsigned int b=0; b<playfield.num_rows(); b++) {
+			if (playfield.entry (a,b)== 0) {
+				possibilities [a][b] = one_through_nine;
+			}
+		}
+	}
+	return possibilities;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+SetPos Puzzle::softcode_all_squares() const {
+ //constructs #1-9 for each entry. May need to modify if start using characters
+  SetPos possibilities;
+  possibilities.resize (playfield.num_rows());
+  int64 one_through_nine=EmptySet();
+	for (unsigned int b=0;b<playfield.num_rows();b++){
+	  insert (one_through_nine, b+1);
+	}
+	for (unsigned int a=0; a<playfield.num_rows(); a++) {
+	  possibilities [a].resize (playfield.num_rows());
+	  for (unsigned int b=0; b<playfield.num_rows(); b++) {
+			possibilities [a][b] = one_through_nine;
+		}
+	}
+	return possibilities;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+int Puzzle::hardcode (SetPos const & possibilities)
+{
+	int num_entered = 0;
+	for (unsigned int i = 0; i < playfield.num_rows(); ++i) {
+	  for (unsigned int j = 0; j < playfield.num_rows(); ++j) {
+	    if (num_ones(possibilities[i][j])==1) {
+	      // enter_number(i,j,*(possibilities [i][j].begin()));
+	      enter_number(i,j,dehat(possibilities[i][j]));
+		       num_entered ++;
+			}
+		}
+	}
+	return num_entered;
+	//	cout<<"num_entered"<<endl;
+}
+void Puzzle::weedout (SetPos & possibilities) const {
+	//eliminates impossibilities
+  int z=sqrt(playfield.num_rows());
+	//hardcoded numbers are already in playfield
+  for ( int a=0; a<playfield.num_rows(); a++) {
+    for (int b=0; b<playfield.num_rows(); b++) {
+   // std::cout << "weeding out from square (" << a << "," << b << ")" << endl;
+	     if (playfield.entry (a,b)!=0) {
+		 int num_to_strike = playfield.entry(a,b);
+		    //have hardcoded entry
+		    //strike from possibilities
+		    // strike from row a,
+		   strike_from_row (a, num_to_strike, possibilities);
+		   strike_from_column (b, num_to_strike, possibilities);
+		   strike_from_box (a/z, b/z, num_to_strike, possibilities);
+			}
+		}
+	}
+}
+//	int play_tricks (possibilities);//mutates the puzzle, returns # of squares filled
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+void Puzzle:: strike_from_box (int m, int n, int num_to_strike, SetPos & possibilities) const {
+
+  //cout << "striking " << num_to_strike << " from box " << m << "," << n << endl;
+  int z=sqrt(playfield.num_rows());
+  for (unsigned int p=0; p<z; p++) {
+    for (unsigned int q=0; q<z; q++) {	        
+      int a = z*m + p; 
+      int b= z*n + q;     
+      erase (possibilities [a][b], num_to_strike);
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+void Puzzle::strike_from_column (int b, int num_to_strike, SetPos & possibilities) const {
+	//	cout << "striking " << num_to_strike << " from column " << b << endl;
+  for (unsigned int i=0; i<playfield.num_rows(); i++) { // loop over each row
+    erase(possibilities [i][b],num_to_strike);	     
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+void Puzzle::strike_from_row (int a, int num_to_strike, SetPos& possibilities) const {
+	//	cout << "striking " << num_to_strike << " from row " << a << endl;
+  for (unsigned int j=0; j<playfield.num_rows(); j++) {
+    erase(possibilities [a][j],num_to_strike);
+	}
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+std::tuple <int, int> Puzzle::ind_min_num_possibilities(SetPos const & possibilities)  {
+  int z=playfield.num_rows();
+  int minimum=z*z+1;
+  int r=1;
+ int c=1;
+ 
+int counter=0;
+ //Want randomization here, but maybe more importantly in venture.guess. Guessing on opposite sides of the puzzle to converge to the middle could be more efficient
+// bool keep_going=true;
+  for (int i=0; i<playfield.num_rows(); i++) {
+    //This is to try to deal with the double break issue. Unfortunately, this causes the program not to return solution. Works for the min, but not for the counter
+      if(minimum==2) {
+	//doesn't seem to help, but it compiles
+      break;
+     }
+      if(counter==25) {
+	break;
+      }
+    
+    for (unsigned int j=0; j<playfield.num_rows(); j++) {
+      if(num_ones(possibilities [i][j])< minimum & num_ones((possibilities [i][j])!=0)) {
+	minimum=num_ones(possibilities[i][j]);
+	r=i;
+        c=j;
+	counter=0;
+      }//end if
+
+      else {
+	counter=counter+1;
+      }
+
+      if(minimum==2) {
+	break;
+	//	keep_going=false;
+      }//end if
+      //If the minimum doesn't change for awhile, cut the loop.
+      if (counter==25) {
+	break;
+	//	keep_going=false;
+      }//end if
+    }//end for
+  }
+  return std::make_tuple(r,c);
+}
+bool Puzzle::venture_guess (SetPos const & possibilities) {
+  int i,j;
+  std::tie(i,j)= ind_min_num_possibilities(possibilities);
+//     	cout << "venturing guess on space " << i << "," << j << endl;
+////This section was added on 4-25-2017 in response to iterator issue//////
+  auto S=possibilities[i][j];
+  std::vector<int> bla (num_ones(S));
+int count=0;
+ for (int q=1; q<=playfield.num_rows();q++) {
+   if (find(S,q) ) {
+     bla[count++]=q;
+   }
+    }//end for 
+ ///End of Added Section///////
+ for (auto k=bla.begin(); k!=bla.end(); k++ ) {
+					Puzzle copy_of_puzzle = *this;
+					copy_of_puzzle.enter_number (i,j,*k );
+					if (copy_of_puzzle.solve ()==true) {
+						*this = copy_of_puzzle;
+						return true;
+					}
+
+				     
+ }//end for2
+    return false;
+    std::cout<<"Venture guess didn't work"<<std::endl;			       
+}//end venture_guess
+
+
+//Venture guess function to use for 9x9 puzzle
+bool Puzzle::venture_guess_9 (SetPos const & possibilities){
+for ( int i=0; i<playfield.num_rows(); i++) {
+  for ( int j=0;j<playfield.num_rows(); j++) {
+    if(num_ones(possibilities[i][j])>0) {
+////This section was added on 4-25-2017 in response to iterator issue//////
+      auto S=possibilities[i][j];
+  std::vector<int> bla (num_ones(S));
+int count=0;
+ for ( int q=1; q<=playfield.num_rows();q++) {
+   if (find(S,q) ) {
+     bla[count++]=q;
+   }
+      }//end for 
+ ///End of Added Section///////
+      for (auto k=bla.begin(); k!=bla.end(); k++ ) {
+					Puzzle copy_of_puzzle = *this;
+					copy_of_puzzle.enter_number (i,j,*k );
+					if (copy_of_puzzle.solve ()==true) {
+						*this = copy_of_puzzle;
+						return true;
+					}//end if
+
+				     
+ }//end for
+    return false;
+    std::cout<<"Venture guess didn't work"<<std::endl;
+    }//end if
+    }//end for
+  }//end for
+return false;
+}//end function
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool Puzzle::is_solved () const {
+  SetPos  possibilities = softcode_all_squares();
+	weedout (possibilities);
+	for (unsigned int a=0; a<playfield.num_rows(); a++) {
+	  for (unsigned int b=0; b<playfield.num_rows(); b++) {
+	    if (num_ones(possibilities [a][b])!=0) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+

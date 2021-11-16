@@ -1,0 +1,111 @@
+
+
+#ifndef MATRIX_HPP_
+#define MATRIX_HPP_
+
+#include <iostream>
+#include <vector>
+#include <assert.h>
+#include <exception>
+#include <cstdlib>
+#include <cmath>
+#include <fstream>
+#include <iomanip>
+
+void test_matrix ();
+
+class Matrix{
+	//two private access data members
+
+public:
+	//methods defined
+
+	Matrix () {}
+	Matrix (unsigned int m, unsigned int n);
+
+
+inline unsigned int  num_rows () const {
+	return entries.size ();
+}
+inline unsigned int num_columns () const {
+	if (num_rows () !=0){
+		return entries[0].size (); //all rows have same col size
+	}
+	else {
+		return 0;
+	}
+	return 0;
+}
+
+	void clear ();
+	void resize (unsigned int m, unsigned int n);
+	Matrix make_identity (unsigned int n); //another method
+	bool is_identity(); //method
+  //Added to check for square matrix
+  bool is_square();
+	void make_zeroes ();
+	void make_zeroes (unsigned int m, unsigned int n);
+	void make_ones ();
+	void make_ones (unsigned int m, unsigned int n);
+
+	double uniform_rand (double a, double b);
+	void make_random ();
+	void make_random(unsigned int m, unsigned int n);
+
+	Matrix operator* (const Matrix & rhs) const;
+	Matrix operator* (double scalar)const;
+	friend Matrix operator* (const double scalar, const Matrix & rhs);
+
+	Matrix operator+ (const Matrix & rhs) const;
+	Matrix operator-() const;
+	Matrix operator-(const Matrix & rhs) const;
+
+	bool operator==(const Matrix & rhs) const;
+
+	Matrix transpose () const;//returns the transpose of the calling matrix
+	double trace () const; //returns the trace of the calling matrix
+  
+  friend std::ostream& operator<<(std::ostream & fout, const Matrix & P)  {
+
+    fout << P.num_rows() << ' ' << P.num_columns() << std::endl;
+          int k=sqrt(P.num_rows());
+		for ( unsigned int i=0; i<P.num_rows(); i++){
+				for (unsigned int j=0;j<P.num_columns(); j++) {
+				  fout<<std::setw(3)<<P.entries[i][j]<<' ';
+				  //For box separation
+				  if(j%k==k-1) {
+				    fout<<'|';
+				  }
+				}
+				fout<<std::endl;
+				//This is to work on separating the boxes
+					if(i%k==k-1) {
+				      //How to match this to width of puzzle
+					  fout<<std::endl;
+					}
+			}
+		return fout;
+	}
+  friend std::istream& operator>>(std::istream & fin, Matrix & M)  {
+    //Below are the two numbers at the top of the matrix text file, which are read in.
+		int m,n;
+		fin >> m >> n;
+			M.resize(m,n);
+		for (unsigned int i=0; i<M.num_rows(); i++){
+				for (unsigned int j=0;j<M.num_columns(); j++) {
+				  fin>> M.entries [i][j];
+				}
+			}
+		return fin;
+	}
+	double entry(int i, int j) const {
+			return entries[i][j];
+		}
+	void set_entry(int i, int j, double new_value){
+		entries[i][j] = new_value;
+	}
+private:
+  std::vector <std::vector <double> > entries; //data, properties
+};
+
+#endif /* MATRIX_HPP_ */

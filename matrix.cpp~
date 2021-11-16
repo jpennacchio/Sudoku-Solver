@@ -1,0 +1,286 @@
+
+#include "matrix.hpp"
+
+//constructor
+Matrix::Matrix(unsigned int m, unsigned int n){
+	resize (m,n);
+}
+
+
+
+void Matrix::clear () {
+	entries.clear ();
+
+}
+
+void Matrix::resize (unsigned int m, unsigned int n){
+	entries.resize(m);
+	for (unsigned int ii=0; ii<m; ii++) {
+		entries[ii].resize (n);
+	}
+}
+
+Matrix Matrix::make_identity (unsigned int n) {
+	//Identity must be a square matrix
+	//diagonal of one's, everything else is zero
+	resize (n,n);
+	for (unsigned int ii=0; ii<n; ii++) {
+		for (unsigned int jj=0; jj<n;jj++) {
+			if (ii==jj) {
+				entries[ii][jj] = 1;
+			}
+			else {
+				entries[ii][jj]= 0;
+			}
+		}
+	}
+	return *this;
+	//de-referenced pointer
+}
+
+bool Matrix::is_identity() {
+
+	if (num_rows()==num_columns()) {
+
+		for (unsigned int ii=0; ii<num_rows(); ii++) {
+			for (unsigned int jj=0; jj<num_columns();jj++) {
+				if (ii==jj) {
+					if (entries[ii][jj] == 1) {
+
+					}
+					else {
+						return false;
+					}
+				}
+				else {
+					if (entries[ii][jj] == 0) {
+
+					}
+					else {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+
+	}
+	else {
+		return false;
+	}
+}
+
+void Matrix:: make_zeroes (){
+	//define method---should leave the size unchanged
+	//update num rows and num columns
+	for (unsigned int ii=0; ii<num_rows(); ii++) {
+		for (unsigned int jj=0; jj<num_columns();jj++) {
+			entries[ii][jj] = 0;
+		}
+	}
+}
+
+
+void Matrix:: make_zeroes (unsigned int m, unsigned int n){
+	//define method---should leave the size unchanged
+	//correct
+	resize (m,n);
+	make_zeroes();
+}
+
+void Matrix:: make_ones (){
+	//define method---should leave the size unchanged
+	//update num rows and num columns
+	for (unsigned int ii=0; ii<num_rows(); ii++) {
+		for (unsigned int jj=0; jj<num_columns();jj++) {
+			entries[ii][jj] = 1;
+		}
+	}
+}
+void Matrix:: make_ones (unsigned int m, unsigned int n){
+	//define method---should leave the size unchanged
+	int num_rows =m;
+	int num_columns=n;
+	for (int ii=0; ii<num_rows; ii++) {
+		for (int jj=0; jj<num_columns;jj++) {
+			entries[ii][jj] = 1;
+		}
+
+
+	}
+}
+
+bool Matrix::is_square() {
+  if(num_rows()==num_columns()) {
+    return true;
+  }
+
+}
+//Copied from random number generator, need help modifying
+double Matrix::uniform_rand (double a, double b)
+//This function generates a random double between specified limits a and b
+{
+	a=-1;
+	b=1;
+	return ( (double)(rand())/ (RAND_MAX))* (b-a)+a;
+}
+
+void Matrix:: make_random (){
+	//define method---should leave the size unchanged
+	//update num rows and num columns
+	for (unsigned int ii=0; ii<num_rows(); ii++) {
+		for (unsigned int jj=0; jj<num_columns();jj++) {
+			entries[ii][jj] = uniform_rand(-1, 1);
+		}
+	}
+}
+
+void Matrix:: make_random(unsigned int m, unsigned int n){
+	//define method---should leave the size unchanged
+	int num_rows =m;
+	int num_columns=n;
+	resize (m,n);
+	for (int ii=0; ii<num_rows; ii++) {
+		for (int jj=0; jj<num_columns;jj++) {
+			entries[ii][jj] = uniform_rand (-1,1);
+		}
+
+
+	}
+}
+
+Matrix Matrix::operator+ (const Matrix & rhs) const {
+
+
+
+	Matrix sum; // int h;
+	sum.resize(num_rows(),num_columns() );
+
+	// check if matrix sizes match
+	if (num_rows () == rhs.num_rows() && num_columns() == rhs.num_columns()) {
+		for (unsigned int i=0; i<num_rows(); i++) {
+			for (unsigned int j=0; j<num_columns(); j++) {
+				sum.entries[i][j] = entries[i][j]+ rhs.entries[i][j];
+			}
+		}
+	}
+	else {
+		sum.make_zeroes();
+	}
+
+	return sum;
+}
+Matrix Matrix:: operator- (const Matrix & rhs) const {
+	//subtraction
+	Matrix subtraction; // int h;
+	subtraction.resize(num_rows(),num_columns());
+	if (num_rows () == rhs.num_rows() && num_columns() == rhs.num_columns()) {
+	for (unsigned int i=0; i<num_rows(); i++) {
+		for (unsigned int j=0; j<num_columns(); j++) {
+			subtraction.entries[i][j] = entries[i][j]- rhs.entries[i][j];
+			}
+		}
+	}
+
+	return subtraction;
+
+}
+Matrix Matrix:: operator- () const {
+	//negation
+	Matrix negation; // int h;
+	negation.resize(num_rows(),num_columns());
+	for (unsigned int i=0; i<num_rows(); i++) {
+		for (unsigned int j=0; j<num_columns(); j++) {
+			negation.entries[i][j] = - entries[i][j];
+		}
+	}
+	return negation;
+}
+
+Matrix Matrix:: operator* (const Matrix & rhs) const {
+	//A*B, A.operator* (B)
+
+	//check if matrix sizes match
+
+	assert(
+		num_columns () == rhs.num_rows()
+	);
+
+	Matrix product;
+	product.resize (num_rows (), rhs.num_columns ());
+
+	for (unsigned int i=0; i<product.num_rows(); i++){
+		for (unsigned int j=0;j<product.num_columns(); j++) {
+			product.entries[i][j]=0;
+			for (unsigned int k=0; k<num_columns();k++) {
+				product.entries[i][j]+=entries[i][k]*rhs.entries[k][i];
+			}
+		}
+	}
+	return product;
+}
+Matrix Matrix:: operator* (double scalar)const {
+	//A*s, A.operator*(s)
+	Matrix ScalarProduct(*this);//copy constructor to create a new object same as A
+	for (unsigned int i=0; i<num_rows(); ++i) {
+		for (unsigned int j=0; j<num_columns(); ++j) {
+			ScalarProduct.entries[i][j]*=scalar;
+		}
+	}
+	return ScalarProduct;
+}
+
+Matrix operator* (const double scalar, const Matrix & rhs){
+	//only need to say friend in hpp file
+	return rhs*scalar;//use version B of operator*, reusability
+}
+bool Matrix::operator==(const Matrix & rhs) const
+				//TA code
+				{
+	unsigned int m= num_rows();
+	unsigned int n= num_columns();
+	if (m!=rhs.num_rows() || n!=rhs.num_columns ()) {
+		return false;
+
+	}
+	for (unsigned int i=0; i<m; ++i) {
+		for (unsigned int j=0; j<n; ++j) {
+			if (abs (entries [i][j]-rhs.entries [i][j]>1e-5)) {
+				return false;
+			}
+		}
+	}
+	return true;
+				}
+
+Matrix Matrix:: transpose () const
+//returns the transpose of the calling matrix
+{
+	Matrix transpose;
+	transpose.resize(num_rows(), num_columns());
+	for (unsigned int i=0; i<transpose.num_rows(); i++){
+		for (unsigned int j=0;j<transpose.num_columns(); j++) {
+			transpose.entries [i][j]=entries [j][i];
+
+		}
+	}
+	return transpose;
+}
+
+double Matrix:: trace() const {
+	Matrix trace;
+	trace.resize(num_rows(), num_columns());
+	double trace_calculator;
+
+	if (num_rows () == num_columns ()) {
+		for (unsigned int i=0; i<trace.num_rows (); i++) {
+			trace_calculator += entries [i][i];
+		}
+		return trace_calculator;
+	}
+	else  {
+		return -1;
+		//error message
+	}
+
+}
